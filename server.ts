@@ -913,53 +913,7 @@ app.get("/api/gemini/status", (_req, res) => {
   });
 });
 
-// Secure API Key Update Endpoint (updates in-memory & persists to .env securely on server)
-app.post("/api/gemini/key", async (req, res) => {
-  try {
-    const { apiKey } = req.body;
-    if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
-      return res.status(400).json({ success: false, error: "Kunci API tidak boleh kosong." });
-    }
-    const cleanKey = apiKey.trim();
-    // Validate minimal structure
-    if (cleanKey.length < 10) {
-      return res.status(400).json({ success: false, error: "Format kunci API tidak valid." });
-    }
 
-    // Update in-memory process.env
-    process.env.GEMINI_API_KEY = cleanKey;
-    lastApiKey = null;
-    aiClient = null;
-
-    // Persist to .env safely on server
-    try {
-      const fs = await import("fs");
-      let envContent = "";
-      if (fs.existsSync(".env")) {
-        envContent = fs.readFileSync(".env", "utf-8");
-        if (envContent.includes("GEMINI_API_KEY=")) {
-          envContent = envContent.replace(/GEMINI_API_KEY=.*/g, `GEMINI_API_KEY=${cleanKey}`);
-        } else {
-          envContent += `\nGEMINI_API_KEY=${cleanKey}\n`;
-        }
-      } else {
-        envContent = `GEMINI_API_KEY=${cleanKey}\nPORT=3000\n`;
-      }
-      fs.writeFileSync(".env", envContent, "utf-8");
-    } catch (fsErr) {
-      console.warn("[KeyUpdate] Note: Could not write .env file, relying on process.env memory:", fsErr);
-    }
-
-    const masked = `${cleanKey.slice(0, 4)}...${cleanKey.slice(-4)}`;
-    return res.json({
-      success: true,
-      message: "Kunci API Gemini berhasil diperbarui dan aktif!",
-      maskedKey: masked,
-    });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err?.message || "Gagal memperbarui API key." });
-  }
-});
 
 // AI Research & Shamela.ws Assistant Endpoint
 app.post("/api/gemini/research", async (req, res) => {
